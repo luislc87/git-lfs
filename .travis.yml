@@ -5,16 +5,16 @@ go: 1.6
 
 os:
   - linux
-  - osx
+  # - osx
 
 env:
   global:
     - GIT_LFS_TEST_DIR="$HOME/git-lfs-tests"
 
 matrix:
-  fast_finish: true
-  allow_failures:
-    - os: osx
+  # fast_finish: true
+  # allow_failures:
+  #   - os: osx
   include:
     - env: git-next
       os: linux
