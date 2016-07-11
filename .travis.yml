@@ -18,7 +18,7 @@ matrix:
   # allow_failures:
   #   - os: osx
   include:
-    - env: git-from-source ($GIT_SOURCE_BRANCH)
+    - env: git-from-source
       os: linux
       before_script:
         - >
