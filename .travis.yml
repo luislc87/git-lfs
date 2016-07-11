@@ -16,6 +16,15 @@ matrix:
   allow_failures:
     - os: osx
   include:
+    - env: git-next
+      os: linux
+      before_script:
+        - >
+          git clone https://github.com/git/git.git;
+          cd git;
+          make --jobs=2;
+          make install;
+          cd ..;
     - env: git-latest
       os: linux
       addons:
