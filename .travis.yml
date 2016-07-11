@@ -20,8 +20,8 @@ matrix:
       os: linux
       before_script:
         - >
-          git clone https://github.com/git/git.git;
-          cd git;
+          git clone https://github.com/git/git.git git-next;
+          cd git-next;
           make --jobs=2;
           make install;
           cd ..;
