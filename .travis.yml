@@ -18,7 +18,7 @@ matrix:
   # allow_failures:
   #   - os: osx
   include:
-    - env: git-next
+    - env: git-from-source ($GIT_SOURCE_BRANCH)
       os: linux
       before_script:
         - >
