@@ -10,8 +10,8 @@ os:
 env:
   global:
     - GIT_LFS_TEST_DIR="$HOME/git-lfs-tests"
-    - GIT_SOURCE_REPO="https://github.com/git/git.git"
-    - GIT_SOURCE_BRANCH="05219a1276341e72d8082d76b7f5ed394b7437a4"
+    - GIT_SOURCE_REPO="https://github.com/larsxschneider/git.git"
+    - GIT_SOURCE_BRANCH="lfs-cache"
 
 matrix:
   fast_finish: true
