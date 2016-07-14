@@ -41,7 +41,8 @@ fi
 
 setup
 
-parallel=${GIT_LFS_TEST_MAXPROCS:-4}
+parallel=1
+# ${GIT_LFS_TEST_MAXPROCS:-4}
 
 echo "Running this maxprocs=$parallel"
 echo
