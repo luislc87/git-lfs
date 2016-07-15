@@ -3,15 +3,12 @@ package commands
 import (
 	"os"
 
-	// "github.com/github/git-lfs/errutil"
-	// "github.com/github/git-lfs/lfs"
-	// "github.com/github/git-lfs/progress"
+	"github.com/github/git-lfs/errutil"
+	"github.com/github/git-lfs/lfs"
 	"github.com/spf13/cobra"
 
 	"bufio"
-	// "encoding/binary"
-	"fmt"
-	"time"
+	"encoding/binary"
 )
 
 var (
@@ -21,126 +18,68 @@ var (
 	}
 )
 
-func cleanFromFileCommand(cmd *cobra.Command, args []string) {
-	// requireStdin("This command should be run by the Git 'clean' filter")
-	// lfs.InstallHooks(false)
+func cleanFile(reader *bufio.Reader) {
+	// Read fileName length
+	buf := make([]byte, 4)
+	_, err := reader.Read(buf)
+	if err != nil {
+		Panic(err, "Error reading asset filename length for cleaning.")
+	}
+	fileNameLen := binary.LittleEndian.Uint32(buf)
 
-	// os.Exit(1)
-	// nBytes, nChunks := int64(0), int64(0)
-	r := bufio.NewReader(os.Stdin)
-	buf := make([]byte, 0, 1)
-	// var pathSize uint32
+	// Read fileName
+	buf = make([]byte, fileNameLen)
+	_, err = reader.Read(buf)
+	if err != nil {
+		Panic(err, "Error reading asset filename for cleaning.")
+	}
+	fileName := string(buf)
 
-	for {
-		n, err := r.Read(buf)
+	// Generate LFS pointer
+	// TODO: ProgressCallback?!
+	fileToClean, _ := os.OpenFile(fileName, os.O_RDONLY, 0600)
+	cleaned, err := lfs.PointerClean(fileToClean, fileName, 0, nil)
+	fileToClean.Close()
 
-		if n == 0 {
-			if err != nil {
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-			f, _ := os.OpenFile("/Users/lars/Code/git/t/output.txt", os.O_APPEND|os.O_WRONLY, 0600)
-			f.WriteString("sleep\n")
-			f.Close()
-		} else {
-
-			f, _ := os.OpenFile("/Users/lars/Code/git/t/output.txt", os.O_APPEND|os.O_WRONLY, 0600)
-			f.WriteString(fmt.Sprintf("hallo %d\n", n))
-			f.Close()
-			fmt.Fprint(os.Stdout, "lars")
-		}
+	if cleaned != nil {
+		defer cleaned.Teardown()
 	}
 
-	// for {
-	// }
+	if errutil.IsCleanPointerError(err) {
+		os.Stdout.Write(errutil.ErrorGetContext(err, "bytes").([]byte))
+		return
+	}
 
-	// fmt.Println("lars")
-	// nChunks++
-	// nBytes += int64(len(buf))
-	// // process buf
-	// if err != nil && err != io.EOF {
-	//     log.Fatal(err)
-	// }
-	// }
+	if err != nil {
+		Panic(err, "Error cleaning asset.")
+	}
 
-	// var i int
-	// for {
-	// 	out, err := fmt.Fscanf(os.Stdin, "%s\n")
+	// Write LFS pointer
+	encodedPointer := cleaned.Pointer.Encoded()
+	binary.Write(os.Stdout, binary.LittleEndian, uint32(len(encodedPointer)))
+	os.Stdout.Write([]byte(encodedPointer))
+}
 
-	// }
+func cleanFromFileCommand(cmd *cobra.Command, args []string) {
+	requireStdin("This command should be run by the Git 'clean' filter")
+	lfs.InstallHooks(false)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		buf := make([]byte, 1)
+		_, err := reader.Read(buf)
+		if err != nil {
+			continue
+		}
 
-	// scanner := bufio.NewScanner(os.Stdin)
-	// for scanner.Scan() {
-	// 	line := scanner.Text()
-	// 	if line == "SHUTDOWN" {
-	// 		break
-	// 	}
-	// 	bs := make([]byte, 4)
-	// 	// binary.BigEndian.PutUint32(bs, 4)
-	// 	fmt.Println(bs)
-	// 	fmt.Println("lars")
-	// 	// fmt.Println(line) // or do something else with line
-	// }
-
-	// var fileName string
-	// var cb progress.CopyCallback
-	// var file *os.File
-	// var fileSize int64
-	// if len(args) > 0 {
-	// 	fileName = args[0]
-
-	// 	stat, err := os.Stat(fileName)
-	// 	if err == nil && stat != nil {
-	// 		fileSize = stat.Size()
-
-	// 		localCb, localFile, err := lfs.CopyCallbackFile("clean", fileName, 1, 1)
-	// 		if err != nil {
-	// 			Error(err.Error())
-	// 		} else {
-	// 			cb = localCb
-	// 			file = localFile
-	// 		}
-	// 	}
-	// }
-
-	// cleaned, err := lfs.PointerClean(os.Stdin, fileName, fileSize, cb)
-	// if file != nil {
-	// 	file.Close()
-	// }
-
-	// if cleaned != nil {
-	// 	defer cleaned.Teardown()
-	// }
-
-	// if errutil.IsCleanPointerError(err) {
-	// 	os.Stdout.Write(errutil.ErrorGetContext(err, "bytes").([]byte))
-	// 	return
-	// }
-
-	// if err != nil {
-	// 	Panic(err, "Error cleaning asset.")
-	// }
-
-	// tmpfile := cleaned.Filename
-	// mediafile, err := lfs.LocalMediaPath(cleaned.Oid)
-	// if err != nil {
-	// 	Panic(err, "Unable to get local media path.")
-	// }
-
-	// if stat, _ := os.Stat(mediafile); stat != nil {
-	// 	if stat.Size() != cleaned.Size && len(cleaned.Pointer.Extensions) == 0 {
-	// 		Exit("Files don't match:\n%s\n%s", mediafile, tmpfile)
-	// 	}
-	// 	Debug("%s exists", mediafile)
-	// } else {
-	// 	if err := os.Rename(tmpfile, mediafile); err != nil {
-	// 		Panic(err, "Unable to move %s to %s\n", tmpfile, mediafile)
-	// 	}
-
-	// 	Debug("Writing %s", mediafile)
-	// }
-
-	// lfs.EncodePointer(os.Stdout, cleaned.Pointer)
+		switch buf[0] {
+		case 1:
+			cleanFile(reader)
+		case 9:
+			return
+		default:
+			panic("Unrecognized cleanFromFile command")
+		}
+	}
 }
 
 func init() {
