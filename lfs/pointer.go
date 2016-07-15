@@ -117,7 +117,7 @@ func DecodeFrom(reader io.Reader) ([]byte, *Pointer, error) {
 		return output, nil, err
 	}
 
-	p, err := decodeKV(bytes.TrimSpace(output))
+	p, err := DecodeKV(bytes.TrimSpace(output))
 	return output, p, err
 }
 
@@ -135,7 +135,7 @@ func verifyVersion(version string) error {
 	return errors.New("Invalid version: " + version)
 }
 
-func decodeKV(data []byte) (*Pointer, error) {
+func DecodeKV(data []byte) (*Pointer, error) {
 	kvps, exts, err := decodeKVData(data)
 	if err != nil {
 		if errutil.IsBadPointerKeyError(err) {

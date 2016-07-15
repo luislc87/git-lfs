@@ -26,18 +26,22 @@ var (
 	filters = &Attribute{
 		Section: "filter.lfs",
 		Properties: map[string]string{
-			"clean":    "git-lfs clean -- %f",
-			"smudge":   "git-lfs smudge -- %f",
-			"required": "true",
+			"clean":         "git-lfs clean -- %f",
+			"smudge":        "git-lfs smudge -- %f",
+			"cleanFromFile": "git-lfs cleanFromFile",
+			"smudgeToFile":  "git-lfs smudgeToFile",
+			"required":      "true",
 		},
 	}
 
 	passFilters = &Attribute{
 		Section: "filter.lfs",
 		Properties: map[string]string{
-			"clean":    "git-lfs clean -- %f",
-			"smudge":   "git-lfs smudge --skip -- %f",
-			"required": "true",
+			"clean":         "git-lfs clean -- %f",
+			"smudge":        "git-lfs smudge --skip -- %f",
+			"cleanFromFile": "git-lfs cleanFromFile",
+			"smudgeToFile":  "git-lfs smudgeToFile",
+			"required":      "true",
 		},
 	}
 )

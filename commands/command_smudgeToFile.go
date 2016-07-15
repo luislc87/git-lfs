@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"bufio"
 	"bytes"
-	"io"
+	"encoding/binary"
 	"os"
 	"path/filepath"
 
@@ -21,22 +22,45 @@ var (
 	}
 )
 
-func smudgeToFileCommand(cmd *cobra.Command, args []string) {
-	requireStdin("This command should be run by the Git 'smudge' filter")
-	lfs.InstallHooks(false)
+func smudgeToFile(reader *bufio.Reader) {
 
-	// keeps the initial buffer from lfs.DecodePointer
-	b := &bytes.Buffer{}
-	r := io.TeeReader(os.Stdin, b)
+	f, _ := os.OpenFile("/Users/lars/Code/git/t/output.txt", os.O_APPEND|os.O_WRONLY, 0600)
+	f.WriteString("smudge\n")
+	f.Close()
 
-	ptr, err := lfs.DecodePointer(r)
+	// Read fileName length
+	buf := make([]byte, 4)
+	_, err := reader.Read(buf)
 	if err != nil {
-		mr := io.MultiReader(b, os.Stdin)
-		_, err := io.Copy(os.Stdout, mr)
-		if err != nil {
-			Panic(err, "Error writing data to stdout:")
-		}
-		return
+		Panic(err, "Error reading asset filename length for smudging.")
+	}
+	fileNameLen := binary.LittleEndian.Uint32(buf)
+
+	// Read fileName
+	buf = make([]byte, fileNameLen)
+	_, err = reader.Read(buf)
+	if err != nil {
+		Panic(err, "Error reading asset filename for smudging.")
+	}
+	fileName := string(buf)
+
+	// Read asset length
+	buf = make([]byte, 4)
+	_, err = reader.Read(buf)
+	if err != nil {
+		Panic(err, "Error reading asset pointer length for smudging.")
+	}
+	assetPtrLen := binary.LittleEndian.Uint32(buf)
+
+	// Read asset
+	buf = make([]byte, assetPtrLen)
+	_, err = reader.Read(buf)
+	if err != nil {
+		Panic(err, "Error reading asset pointer for smudging.")
+	}
+	ptr, err := lfs.DecodeKV(bytes.TrimSpace(buf))
+	if err != nil {
+		// Panic(err, "TODO")
 	}
 
 	lfs.LinkOrCopyFromReference(ptr.Oid, ptr.Size)
@@ -56,34 +80,56 @@ func smudgeToFileCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	filename := smudgeToFileFilename(args, err)
-	cb, file, err := lfs.CopyCallbackFile("smudge", filename, 1, 1)
+	cb, file, err := lfs.CopyCallbackFile("smudge", fileName, 1, 1)
 	if err != nil {
 		Error(err.Error())
 	}
 
 	cfg := config.Config
-	download := lfs.FilenamePassesIncludeExcludeFilter(filename, cfg.FetchIncludePaths(), cfg.FetchExcludePaths())
+	download := lfs.FilenamePassesIncludeExcludeFilter(fileName, cfg.FetchIncludePaths(), cfg.FetchExcludePaths())
 
 	if smudgeToFileSkip || cfg.GetenvBool("GIT_LFS_SKIP_SMUDGE", false) {
 		download = false
 	}
 
-	err = ptr.Smudge(os.Stdout, filename, download, cb)
+	err = lfs.PointerSmudgeToFile(fileName, ptr, download, cb)
 	if file != nil {
 		file.Close()
 	}
 
 	if err != nil {
-		ptr.Encode(os.Stdout)
+
+		// ptr.Encode(os.Stdout)
 		// Download declined error is ok to skip if we weren't requesting download
 		if !(errutil.IsDownloadDeclinedError(err) && !download) {
-			LoggedError(err, "Error downloading object: %s (%s)", filename, ptr.Oid)
+			LoggedError(err, "Error downloading object: %s (%s)", fileName, ptr.Oid)
 			if !cfg.SkipDownloadErrors() {
 				os.Exit(2)
 			}
 		}
 	}
+}
+
+func smudgeToFileCommand(cmd *cobra.Command, args []string) {
+	requireStdin("This command should be run by the Git 'smudge' filter")
+	lfs.InstallHooks(false)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		buf := make([]byte, 1)
+		_, err := reader.Read(buf)
+		if err != nil {
+			continue
+		}
+		switch buf[0] {
+		case 1:
+			smudgeToFile(reader)
+		case 9:
+			return
+		default:
+			panic("Unrecognized smudgeToFile command")
+		}
+	}
+
 }
 
 func smudgeToFileFilename(args []string, err error) string {

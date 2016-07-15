@@ -1,14 +1,13 @@
 package commands
 
 import (
+	"bufio"
+	"encoding/binary"
 	"os"
 
 	"github.com/github/git-lfs/errutil"
 	"github.com/github/git-lfs/lfs"
 	"github.com/spf13/cobra"
-
-	"bufio"
-	"encoding/binary"
 )
 
 var (
@@ -19,6 +18,11 @@ var (
 )
 
 func cleanFile(reader *bufio.Reader) {
+
+	f, _ := os.OpenFile("/Users/lars/Code/git/t/output.txt", os.O_APPEND|os.O_WRONLY, 0600)
+	f.WriteString("clean\n")
+	f.Close()
+
 	// Read fileName length
 	buf := make([]byte, 4)
 	_, err := reader.Read(buf)
@@ -70,7 +74,6 @@ func cleanFromFileCommand(cmd *cobra.Command, args []string) {
 		if err != nil {
 			continue
 		}
-
 		switch buf[0] {
 		case 1:
 			cleanFile(reader)

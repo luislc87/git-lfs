@@ -3,7 +3,9 @@
 . "test/testlib.sh"
 
 envInitConfig='git config filter.lfs.smudge = "git-lfs smudge -- %f"
-git config filter.lfs.clean = "git-lfs clean -- %f"'
+git config filter.lfs.clean = "git-lfs clean -- %f"
+git config filter.lfs.smudgeToFile = "git-lfs smudgeToFile"
+git config filter.lfs.cleanFromFile = "git-lfs cleanFromFile"'
 
 begin_test "env with no remote"
 (
