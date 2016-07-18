@@ -31,6 +31,8 @@ begin_test "track"
   fi
 
   mkdir -p a/b
+  # TODO: Why is this addition necessary?
+  mkdir -p .git/info
 
   echo "*.mov filter=lfs -text" > .git/info/attributes
   echo "*.gif filter=lfs -text" > a/.gitattributes

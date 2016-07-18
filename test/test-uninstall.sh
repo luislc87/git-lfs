@@ -9,8 +9,8 @@ begin_test "uninstall outside repository"
   smudge="$(git config filter.lfs.smudge)"
   clean="$(git config filter.lfs.clean)"
 
-  printf "$smudge" | grep "git-lfs smudge"
-  printf "$clean" | grep "git-lfs clean"
+  printf "$smudge" | grep "git-lfs filter"
+  printf "$clean" | grep "git-lfs filter"
 
   # uninstall multiple times to trigger https://github.com/github/git-lfs/issues/529
   git lfs uninstall
@@ -39,8 +39,8 @@ begin_test "uninstall inside repository with default pre-push hook"
   [ -f .git/hooks/pre-push ]
   grep "git-lfs" .git/hooks/pre-push
 
-  [ "git-lfs smudge -- %f" = "$(git config filter.lfs.smudge)" ]
-  [ "git-lfs clean -- %f" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall
 
@@ -68,8 +68,8 @@ begin_test "uninstall inside repository without git lfs pre-push hook"
   [ -f .git/hooks/pre-push ]
   [ "something something git-lfs" = "$(cat .git/hooks/pre-push)" ]
 
-  [ "git-lfs smudge -- %f" = "$(git config filter.lfs.smudge)" ]
-  [ "git-lfs clean -- %f" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall
 
@@ -92,8 +92,8 @@ begin_test "uninstall hooks inside repository"
   [ -f .git/hooks/pre-push ]
   grep "git-lfs" .git/hooks/pre-push
 
-  [ "git-lfs smudge -- %f" = "$(git config filter.lfs.smudge)" ]
-  [ "git-lfs clean -- %f" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall hooks
 
@@ -102,7 +102,7 @@ begin_test "uninstall hooks inside repository"
     exit 1
   }
 
-  [ "git-lfs smudge -- %f" = "$(git config filter.lfs.smudge)" ]
-  [ "git-lfs clean -- %f" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 )
 end_test

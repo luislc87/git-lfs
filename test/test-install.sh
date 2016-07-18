@@ -9,8 +9,8 @@ begin_test "install again"
   smudge="$(git config filter.lfs.smudge)"
   clean="$(git config filter.lfs.clean)"
 
-  printf "$smudge" | grep "git-lfs smudge"
-  printf "$clean" | grep "git-lfs clean"
+  printf "$smudge" | grep "git-lfs filter"
+  printf "$clean" | grep "git-lfs filter"
 
   git lfs install
 
@@ -23,8 +23,8 @@ begin_test "install with old settings"
 (
   set -e
 
-  git config --global filter.lfs.smudge "git lfs smudge %f"
-  git config --global filter.lfs.clean "git lfs clean %f"
+  git config --global filter.lfs.smudge "git lfs filter"
+  git config --global filter.lfs.clean "git lfs filter"
 
   set +e
   git lfs install 2> install.log
@@ -37,12 +37,12 @@ begin_test "install with old settings"
   grep -E "(clean|smudge) attribute should be" install.log
   [ `grep -c "(MISSING)" install.log` = "0" ]
 
-  [ "git lfs smudge %f" = "$(git config --global filter.lfs.smudge)" ]
-  [ "git lfs clean %f" = "$(git config --global filter.lfs.clean)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.clean)" ]
 
   git lfs install --force
-  [ "git-lfs smudge -- %f" = "$(git config --global filter.lfs.smudge)" ]
-  [ "git-lfs clean -- %f" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
 )
 end_test
 
@@ -140,16 +140,16 @@ begin_test "install --skip-smudge"
   set -e
 
   git lfs install
-  [ "git-lfs clean -- %f" = "$(git config --global filter.lfs.clean)" ]
-  [ "git-lfs smudge -- %f" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
 
   git lfs install --skip-smudge
-  [ "git-lfs clean -- %f" = "$(git config --global filter.lfs.clean)" ]
-  [ "git-lfs smudge --skip -- %f" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter --skip" = "$(git config --global filter.lfs.smudge)" ]
 
   git lfs install --force
-  [ "git-lfs clean -- %f" = "$(git config --global filter.lfs.clean)" ]
-  [ "git-lfs smudge -- %f" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
 )
 end_test
 
@@ -158,17 +158,17 @@ begin_test "install --local"
   set -e
 
   # old values that should be ignored by `install --local`
-  git config --global filter.lfs.smudge "git lfs smudge %f"
-  git config --global filter.lfs.clean "git lfs clean %f"
+  git config --global filter.lfs.smudge "git lfs filter"
+  git config --global filter.lfs.clean "git lfs filter"
 
   mkdir install-local-repo
   cd install-local-repo
   git init
   git lfs install --local
 
-  [ "git-lfs clean -- %f" = "$(git config filter.lfs.clean)" ]
-  [ "git-lfs clean -- %f" = "$(git config --local filter.lfs.clean)" ]
-  [ "git lfs clean %f" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --local filter.lfs.clean)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.clean)" ]
 )
 end_test
 
