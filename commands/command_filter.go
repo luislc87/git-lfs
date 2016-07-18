@@ -129,7 +129,7 @@ func smudge(reader *bytes.Reader, filename string) ([]byte, error) {
 }
 
 func filterCommand(cmd *cobra.Command, args []string) {
-	requireStdin("This command should be run by the Git 'clean' filter")
+	requireStdin("This command should be run by the Git filter")
 	lfs.InstallHooks(false)
 
 	requestShutdown := false
