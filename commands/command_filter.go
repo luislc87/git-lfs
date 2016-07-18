@@ -10,7 +10,6 @@ import (
 	"github.com/github/git-lfs/progress"
 	"github.com/spf13/cobra"
 	"os"
-	"os/signal"
 )
 
 var (
@@ -132,18 +131,11 @@ func filterCommand(cmd *cobra.Command, args []string) {
 	requireStdin("This command should be run by the Git filter")
 	lfs.InstallHooks(false)
 
-	requestShutdown := false
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		requestShutdown = true
-	}()
-
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		buf := make([]byte, 4)
 		readBytes, err := reader.Read(buf)
-		if readBytes == 0 && requestShutdown {
+		if readBytes == 0 {
 			return
 		}
 		command := binary.LittleEndian.Uint32(buf)
