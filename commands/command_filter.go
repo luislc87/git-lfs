@@ -140,6 +140,7 @@ func filterCommand(cmd *cobra.Command, args []string) {
 	lfs.InstallHooks(false)
 
 	reader := bufio.NewReader(os.Stdin)
+	writer := bufio.NewWriter(os.Stdout)
 	for {
 		var command FilterOperation
 		if err := binary.Read(reader, binary.LittleEndian, &command); err == io.EOF {
@@ -185,7 +186,6 @@ func filterCommand(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		writer := bufio.NewWriter(os.Stdout)
 		resLength := uint32(len(outputData))
 		binary.Write(writer, binary.LittleEndian, resLength)
 		if resLength > 0 {
