@@ -13,6 +13,13 @@ import (
 	"os"
 )
 
+type FilterOperation uint32
+
+const (
+	CleanOperation FilterOperation = iota + 1
+	SmudgeOperation
+)
+
 var (
 	filterSmudgeSkip = false
 	filterCmd        = &cobra.Command{
@@ -134,7 +141,7 @@ func filterCommand(cmd *cobra.Command, args []string) {
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		var command uint32
+		var command FilterOperation
 		if err := binary.Read(reader, binary.LittleEndian, &command); err == io.EOF {
 			return
 		} else if err != nil {
@@ -169,9 +176,9 @@ func filterCommand(cmd *cobra.Command, args []string) {
 		if inputDataPtrLen > 0 {
 			inputData := io.LimitReader(reader, int64(inputDataPtrLen))
 			switch command {
-			case 1:
+			case CleanOperation:
 				outputData, _ = clean(inputData, fileName)
-			case 2:
+			case SmudgeOperation:
 				outputData, _ = smudge(inputData, fileName)
 			default:
 				panic("Unrecognized filter command.")
