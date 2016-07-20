@@ -20,6 +20,37 @@ const (
 	SmudgeOperation
 )
 
+type InputFileHdr struct {
+	FileName string
+	FileLen  uint32
+}
+
+func (h *InputFileHdr) Read(r io.Reader) error {
+	// Read file name length
+	var fileNameLen uint32
+	if err := binary.Read(r, binary.LittleEndian, &fileNameLen); err != nil {
+		return errutil.Errorf(err, "Error reading filename length.")
+	}
+
+	// Read file name
+	h.FileName = ""
+	if fileNameLen > 0 {
+		buf := make([]byte, fileNameLen)
+		readLen, err := r.Read(buf)
+		if err != nil || readLen != int(fileNameLen) {
+			return errutil.Errorf(err, "Error reading filename.")
+		}
+		h.FileName = string(buf)
+	}
+
+	// Read input file length
+	if err := binary.Read(r, binary.LittleEndian, &h.FileLen); err != nil {
+		return errutil.Errorf(err, "Error reading input data length.")
+	}
+
+	return nil
+}
+
 var (
 	filterSmudgeSkip = false
 	filterCmd        = &cobra.Command{
@@ -149,38 +180,20 @@ func filterCommand(cmd *cobra.Command, args []string) {
 			Panic(err, "Error reading filter command.")
 		}
 
-		// Read fileName length
-		var fileNameLen uint32
-		if err := binary.Read(reader, binary.LittleEndian, &fileNameLen); err != nil {
-			Panic(err, "Error reading filename length.")
-		}
-
-		// Read fileName
-		fileName := ""
-		if fileNameLen > 0 {
-			buf := make([]byte, fileNameLen)
-			_, err := reader.Read(buf)
-			if err != nil {
-				Panic(err, "Error reading filename.")
-			}
-			fileName = string(buf)
-		}
-
-		// Read inputData length
-		var inputDataPtrLen uint32
-		if err := binary.Read(reader, binary.LittleEndian, &inputDataPtrLen); err != nil {
-			Panic(err, "Error reading input data length.")
+		var inputHeader InputFileHdr
+		if err := inputHeader.Read(reader); err != nil {
+			Panic(err, "Error reading input header.")
 		}
 
 		// Read inputData
 		var outputData []byte
-		if inputDataPtrLen > 0 {
-			inputData := io.LimitReader(reader, int64(inputDataPtrLen))
+		if inputHeader.FileLen > 0 {
+			inputData := io.LimitReader(reader, int64(inputHeader.FileLen))
 			switch command {
 			case CleanOperation:
-				outputData, _ = clean(inputData, fileName)
+				outputData, _ = clean(inputData, inputHeader.FileName)
 			case SmudgeOperation:
-				outputData, _ = smudge(inputData, fileName)
+				outputData, _ = smudge(inputData, inputHeader.FileName)
 			default:
 				panic("Unrecognized filter command.")
 			}
