@@ -9,6 +9,7 @@ import (
 	"github.com/github/git-lfs/lfs"
 	"github.com/github/git-lfs/progress"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 )
 
@@ -133,51 +134,43 @@ func filterCommand(cmd *cobra.Command, args []string) {
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		buf := make([]byte, 4)
-		readBytes, err := reader.Read(buf)
-		if readBytes == 0 {
+		var command uint32
+		if err := binary.Read(reader, binary.LittleEndian, &command); err == io.EOF {
 			return
-		}
-		command := binary.LittleEndian.Uint32(buf)
-
-		if err != nil {
-			continue
+		} else if err != nil {
+			Panic(err, "Error reading filter command.")
 		}
 
 		// Read fileName length
-		buf = make([]byte, 4)
-		_, err = reader.Read(buf)
-		if err != nil {
-			Panic(err, "Error reading inputData filename length for cleaning.")
+		var fileNameLen uint32
+		if err := binary.Read(reader, binary.LittleEndian, &fileNameLen); err != nil {
+			Panic(err, "Error reading filename length.")
 		}
-		fileNameLen := binary.LittleEndian.Uint32(buf)
 
 		// Read fileName
 		fileName := ""
 		if fileNameLen > 0 {
-			buf = make([]byte, fileNameLen)
-			_, err = reader.Read(buf)
+			buf := make([]byte, fileNameLen)
+			_, err := reader.Read(buf)
 			if err != nil {
-				Panic(err, "Error reading inputData filename for cleaning.")
+				Panic(err, "Error reading filename.")
 			}
 			fileName = string(buf)
 		}
 
 		// Read inputData length
-		buf = make([]byte, 4)
-		_, err = reader.Read(buf)
-		if err != nil {
-			Panic(err, "Error reading inputData pointer length for smudging.")
+		var inputDataPtrLen uint32
+		if err := binary.Read(reader, binary.LittleEndian, &inputDataPtrLen); err != nil {
+			Panic(err, "Error reading input data length.")
 		}
-		inputDataPtrLen := binary.LittleEndian.Uint32(buf)
 
 		// Read inputData
 		var outputData []byte
 		if inputDataPtrLen > 0 {
-			buf = make([]byte, inputDataPtrLen)
-			_, err = reader.Read(buf)
+			buf := make([]byte, inputDataPtrLen)
+			_, err := reader.Read(buf)
 			if err != nil {
-				Panic(err, "Error reading inputData pointer for smudging.")
+				Panic(err, "Error reading input data.")
 			}
 			inputData := bytes.NewReader(buf)
 
@@ -187,7 +180,7 @@ func filterCommand(cmd *cobra.Command, args []string) {
 			case 2:
 				outputData, _ = smudge(inputData, fileName)
 			default:
-				panic("Unrecognized filter command")
+				panic("Unrecognized filter command.")
 			}
 		}
 
