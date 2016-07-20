@@ -21,7 +21,7 @@ var (
 	}
 )
 
-func clean(reader *bytes.Reader, fileName string) ([]byte, error) {
+func clean(reader io.Reader, fileName string) ([]byte, error) {
 	var cb progress.CopyCallback
 	var file *os.File
 	var fileSize int64
@@ -80,7 +80,7 @@ func clean(reader *bytes.Reader, fileName string) ([]byte, error) {
 	return []byte(cleaned.Pointer.Encoded()), nil
 }
 
-func smudge(reader *bytes.Reader, filename string) ([]byte, error) {
+func smudge(reader io.Reader, filename string) ([]byte, error) {
 	ptr, err := lfs.DecodePointer(reader)
 	if err != nil {
 		// TODO: No test seems to trigger this code path
@@ -167,13 +167,7 @@ func filterCommand(cmd *cobra.Command, args []string) {
 		// Read inputData
 		var outputData []byte
 		if inputDataPtrLen > 0 {
-			buf := make([]byte, inputDataPtrLen)
-			_, err := reader.Read(buf)
-			if err != nil {
-				Panic(err, "Error reading input data.")
-			}
-			inputData := bytes.NewReader(buf)
-
+			inputData := io.LimitReader(reader, int64(inputDataPtrLen))
 			switch command {
 			case 1:
 				outputData, _ = clean(inputData, fileName)
