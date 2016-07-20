@@ -209,6 +209,6 @@ func filterCommand(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-	filterCmd.Flags().BoolVarP(&filterSmudgeSkip, "skip", "s", false, "")
+	filterCmd.Flags().BoolVarP(&filterSmudgeSkip, "skip-smudge", "s", false, "")
 	RootCmd.AddCommand(filterCmd)
 }
