@@ -16,6 +16,10 @@ import (
 type FilterOperation uint32
 
 const (
+	FilterDriverVersion = 1
+)
+
+const (
 	CleanOperation FilterOperation = iota + 1
 	SmudgeOperation
 )
@@ -172,6 +176,10 @@ func filterCommand(cmd *cobra.Command, args []string) {
 
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
+
+	binary.Write(writer, binary.LittleEndian, uint32(FilterDriverVersion))
+	writer.Flush()
+
 	for {
 		var command FilterOperation
 		if err := binary.Read(reader, binary.LittleEndian, &command); err == io.EOF {
