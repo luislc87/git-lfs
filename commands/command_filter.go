@@ -3,54 +3,51 @@ package commands
 import (
 	"bufio"
 	"bytes"
-	"encoding/binary"
+	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/github/git-lfs/config"
 	"github.com/github/git-lfs/errutil"
 	"github.com/github/git-lfs/lfs"
 	"github.com/github/git-lfs/progress"
 	"github.com/spf13/cobra"
-	"io"
-	"os"
 )
-
-type FilterOperation uint32
 
 const (
 	FilterDriverVersion = 1
 )
 
-const (
-	CleanOperation FilterOperation = iota + 1
-	SmudgeOperation
-)
-
 type InputFileHdr struct {
 	FileName string
-	FileLen  uint32
+	FileLen  uint64
 }
 
-func (h *InputFileHdr) Read(r io.Reader) error {
-	// Read file name length
-	var fileNameLen uint32
-	if err := binary.Read(r, binary.LittleEndian, &fileNameLen); err != nil {
-		return errutil.Errorf(err, "Error reading filename length.")
+func (h *InputFileHdr) Read(r *bufio.Reader) error {
+	fileName, err := r.ReadString('\n')
+	if err == io.EOF {
+		return err
+	} else if err != nil {
+		Panic(err, "Error reading filter command.")
 	}
+	h.FileName = strings.TrimSuffix(fileName, "\n")
 
-	// Read file name
-	h.FileName = ""
-	if fileNameLen > 0 {
-		buf := make([]byte, fileNameLen)
-		readLen, err := r.Read(buf)
-		if err != nil || readLen != int(fileNameLen) {
-			return errutil.Errorf(err, "Error reading filename.")
-		}
-		h.FileName = string(buf)
+	fileLenStr, err := r.ReadString('\n')
+	if err == io.EOF {
+		return err
+	} else if err != nil {
+		Panic(err, "Error reading input data length.")
 	}
+	fileLenStr = strings.TrimSuffix(fileLenStr, "\n")
+	fileLen, err := strconv.ParseUint(fileLenStr, 10, 64)
+	if err != nil {
+		Panic(err, fmt.Sprintf("Error parsing input data length '%s'.", fileLenStr))
+	}
+	h.FileLen = fileLen
 
-	// Read input file length
-	if err := binary.Read(r, binary.LittleEndian, &h.FileLen); err != nil {
-		return errutil.Errorf(err, "Error reading input data length.")
-	}
+	// Panic(err, fmt.Sprintf("Errorddddddddddddgth '%d'.", fileLen))
 
 	return nil
 }
@@ -177,16 +174,18 @@ func filterCommand(cmd *cobra.Command, args []string) {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
 
-	binary.Write(writer, binary.LittleEndian, uint32(FilterDriverVersion))
+	writer.WriteString(fmt.Sprintf("version %d", FilterDriverVersion))
 	writer.Flush()
 
 	for {
-		var command FilterOperation
-		if err := binary.Read(reader, binary.LittleEndian, &command); err == io.EOF {
+		var command string
+		command, err := reader.ReadString('\n')
+		if err == io.EOF {
 			return
 		} else if err != nil {
 			Panic(err, "Error reading filter command.")
 		}
+		command = strings.TrimSuffix(command, "\n")
 
 		var inputHeader InputFileHdr
 		if err := inputHeader.Read(reader); err != nil {
@@ -198,18 +197,18 @@ func filterCommand(cmd *cobra.Command, args []string) {
 		if inputHeader.FileLen > 0 {
 			inputData := io.LimitReader(reader, int64(inputHeader.FileLen))
 			switch command {
-			case CleanOperation:
+			case "clean":
 				outputData, _ = clean(inputData, inputHeader.FileName)
-			case SmudgeOperation:
+			case "smudge":
 				outputData, _ = smudge(inputData, inputHeader.FileName)
 			default:
-				panic("Unrecognized filter command.")
+				panic(fmt.Sprintf("Unrecognized filter command '%s'.", command))
 			}
 		}
 
-		resLength := uint32(len(outputData))
-		binary.Write(writer, binary.LittleEndian, resLength)
-		if resLength > 0 {
+		writer.WriteString(fmt.Sprintf("%d\n", len(outputData)))
+		writer.Flush()
+		if len(outputData) > 0 {
 			writer.Write(outputData)
 		}
 		writer.Flush()
