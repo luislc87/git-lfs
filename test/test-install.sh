@@ -6,13 +6,16 @@ begin_test "install again"
 (
   set -e
 
-  driver="$(git config filter.lfs.driver)"
+  smudge="$(git config filter.lfs.smudge)"
+  clean="$(git config filter.lfs.clean)"
 
-  printf "$driver" | grep "git-lfs filter"
+  printf "$smudge" | grep "git-lfs filter"
+  printf "$clean" | grep "git-lfs filter"
 
   git lfs install
 
-  [ "$driver" = "$(git config filter.lfs.driver)" ]
+  [ "$smudge" = "$(git config filter.lfs.smudge)" ]
+  [ "$clean" = "$(git config filter.lfs.clean)" ]
 )
 end_test
 
@@ -20,7 +23,8 @@ begin_test "install with old settings"
 (
   set -e
 
-  git config --global filter.lfs.driver "git lfs filter"
+  git config --global filter.lfs.smudge "git lfs filter"
+  git config --global filter.lfs.clean "git lfs filter"
 
   set +e
   git lfs install 2> install.log
@@ -30,13 +34,15 @@ begin_test "install with old settings"
   [ "$res" = 2 ]
 
   cat install.log
-  grep -E "(driver) attribute should be" install.log
+  grep -E "(clean|smudge) attribute should be" install.log
   [ `grep -c "(MISSING)" install.log` = "0" ]
 
-  [ "git lfs filter" = "$(git config --global filter.lfs.driver)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.clean)" ]
 
   git lfs install --force
-  [ "git-lfs filter" = "$(git config --global filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
 )
 end_test
 
@@ -134,13 +140,16 @@ begin_test "install --skip-smudge"
   set -e
 
   git lfs install
-  [ "git-lfs filter" = "$(git config --global filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
 
   git lfs install --skip-smudge
-  [ "git-lfs filter --skip-smudge" = "$(git config --global filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter --skip" = "$(git config --global filter.lfs.smudge)" ]
 
   git lfs install --force
-  [ "git-lfs filter" = "$(git config --global filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --global filter.lfs.smudge)" ]
 )
 end_test
 
@@ -149,16 +158,17 @@ begin_test "install --local"
   set -e
 
   # old values that should be ignored by `install --local`
-  git config --global filter.lfs.driver "git lfs filter"
+  git config --global filter.lfs.smudge "git lfs filter"
+  git config --global filter.lfs.clean "git lfs filter"
 
   mkdir install-local-repo
   cd install-local-repo
   git init
   git lfs install --local
 
-  [ "git-lfs filter" = "$(git config filter.lfs.driver)" ]
-  [ "git-lfs filter" = "$(git config --local filter.lfs.driver)" ]
-  [ "git lfs filter" = "$(git config --global filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
+  [ "git-lfs filter" = "$(git config --local filter.lfs.clean)" ]
+  [ "git lfs filter" = "$(git config --global filter.lfs.clean)" ]
 )
 end_test
 

@@ -2,7 +2,8 @@
 
 . "test/testlib.sh"
 
-envInitConfig='git config filter.lfs.driver = "git-lfs filter"'
+envInitConfig='git config filter.lfs.smudge = "git-lfs filter"
+git config filter.lfs.clean = "git-lfs filter"'
 
 begin_test "env with no remote"
 (
@@ -582,7 +583,8 @@ PruneRemoteName=origin
 AccessDownload=none
 AccessUpload=none
 %s
-git config filter.lfs.NO_TEST_IS_FAILING_OVER_THIS?? = \"\"
+git config filter.lfs.smudge = \"\"
+git config filter.lfs.clean = \"\"
 ' "$(git lfs version)" "$(git version)" "$localwd" "$localgit" "$localgitstore" "$localmedia" "$tempdir" "$envVars")
   actual5=$(GIT_DIR=$gitDir GIT_WORK_TREE=a/b git lfs env)
   contains_same_elements "$expected5" "$actual5"

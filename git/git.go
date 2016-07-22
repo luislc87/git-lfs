@@ -733,21 +733,17 @@ func CloneWithoutFilters(flags CloneFlags, args []string) error {
 	// not working. You can get around that with https://github.com/kr/pty but that
 	// causes difficult issues with passing through Stdin for login prompts
 	// This way is simpler & more practical.
-	var (
-		driverFilterOverride string
-		smudgeFilterOverride string
-	)
+	filterOverride := ""
 	if !Config.IsGitVersionAtLeast("2.8.0") {
-		driverFilterOverride = "false" // Will fall through to smudgeFilter
-		smudgeFilterOverride = "cat"
+		filterOverride = "cat"
 	}
 	// Disable the LFS filters while cloning to speed things up
 	// this is especially effective on Windows where even calling git-lfs at all
 	// with --skip-smudge is costly across many files in a checkout
 	cmdargs := []string{
-		"-c", fmt.Sprintf("filter.lfs.driver=%v", driverFilterOverride),
-		"-c", fmt.Sprintf("filter.lfs.smudge=%v", smudgeFilterOverride),
+		"-c", fmt.Sprintf("filter.lfs.smudge=%v", filterOverride),
 		"-c", "filter.lfs.required=false",
+		"-c", "filter.lfs.useProtocol=false",
 		"clone"}
 
 	// flags

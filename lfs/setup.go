@@ -3,6 +3,8 @@ package lfs
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/github/git-lfs/git"
 )
 
 var (
@@ -23,23 +25,43 @@ var (
 		prePushHook,
 	}
 
+	protocolFilters = &Attribute{
+		Section: "filter.lfs",
+		Properties: map[string]string{
+			"clean":       "git-lfs filter",
+			"smudge":      "git-lfs filter",
+			"required":    "true",
+			"useProtocol": "true",
+		},
+	}
+
+	passProtocolFilters = &Attribute{
+		Section: "filter.lfs",
+		Properties: map[string]string{
+			"clean":       "git-lfs filter",
+			"smudge":      "git-lfs filter --skip-smudge",
+			"required":    "true",
+			"useProtocol": "true",
+		},
+	}
+
 	filters = &Attribute{
 		Section: "filter.lfs",
 		Properties: map[string]string{
-			"driver": "git-lfs filter",
-			// "cleanFromFile": "git-lfs filter",
-			// "smudgeToFile":  "git-lfs filter",
-			"required": "true",
+			"clean":       "git-lfs clean",
+			"smudge":      "git-lfs smudge",
+			"required":    "true",
+			"useProtocol": "false",
 		},
 	}
 
 	passFilters = &Attribute{
 		Section: "filter.lfs",
 		Properties: map[string]string{
-			"driver": "git-lfs filter --skip-smudge",
-			// "cleanFromFile": "git-lfs filter",
-			// "smudgeToFile":  "git-lfs filter",
-			"required": "true",
+			"clean":       "git-lfs clean",
+			"smudge":      "git-lfs smudge --skip",
+			"required":    "true",
+			"useProtocol": "false",
 		},
 	}
 )
@@ -86,6 +108,13 @@ func UninstallHooks() error {
 // An error will be returned if a filter is unable to be set, or if the required
 // filters were not present.
 func InstallFilters(opt InstallOptions, passThrough bool) error {
+	// TODO - let's see if core Git accepts this :-)
+	if git.Config.IsGitVersionAtLeast("2.8.0") {
+		if passThrough {
+			return passProtocolFilters.Install(opt)
+		}
+		return filters.Install(opt)
+	}
 	if passThrough {
 		return passFilters.Install(opt)
 	}

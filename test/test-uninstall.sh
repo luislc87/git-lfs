@@ -6,9 +6,11 @@ begin_test "uninstall outside repository"
 (
   set -e
 
-  driver="$(git config filter.lfs.driver)"
+  smudge="$(git config filter.lfs.smudge)"
+  clean="$(git config filter.lfs.clean)"
 
-  printf "$driver" | grep "git-lfs filter"
+  printf "$smudge" | grep "git-lfs filter"
+  printf "$clean" | grep "git-lfs filter"
 
   # uninstall multiple times to trigger https://github.com/github/git-lfs/issues/529
   git lfs uninstall
@@ -16,7 +18,8 @@ begin_test "uninstall outside repository"
   git lfs uninstall | tee uninstall.log
   grep "configuration has been removed" uninstall.log
 
-  [ "" = "$(git config --global filter.lfs.driver)" ]
+  [ "" = "$(git config --global filter.lfs.smudge)" ]
+  [ "" = "$(git config --global filter.lfs.clean)" ]
 
   cat $HOME/.gitconfig
   [ "$(grep 'filter "lfs"' $HOME/.gitconfig -c)" = "0" ]
@@ -36,7 +39,8 @@ begin_test "uninstall inside repository with default pre-push hook"
   [ -f .git/hooks/pre-push ]
   grep "git-lfs" .git/hooks/pre-push
 
-  [ "git-lfs filter" = "$(git config filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall
 
@@ -44,7 +48,8 @@ begin_test "uninstall inside repository with default pre-push hook"
     echo "expected .git/hooks/pre-push to be deleted"
     exit 1
   }
-  [ "" = "$(git config filter.lfs.driver)" ]
+  [ "" = "$(git config filter.lfs.smudge)" ]
+  [ "" = "$(git config filter.lfs.clean)" ]
 )
 end_test
 
@@ -63,12 +68,14 @@ begin_test "uninstall inside repository without git lfs pre-push hook"
   [ -f .git/hooks/pre-push ]
   [ "something something git-lfs" = "$(cat .git/hooks/pre-push)" ]
 
-  [ "git-lfs filter" = "$(git config filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall
 
   [ -f .git/hooks/pre-push ]
-  [ "" = "$(git config filter.lfs.driver)" ]
+  [ "" = "$(git config filter.lfs.smudge)" ]
+  [ "" = "$(git config filter.lfs.clean)" ]
 )
 end_test
 
@@ -85,7 +92,8 @@ begin_test "uninstall hooks inside repository"
   [ -f .git/hooks/pre-push ]
   grep "git-lfs" .git/hooks/pre-push
 
-  [ "git-lfs filter" = "$(git config filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 
   git lfs uninstall hooks
 
@@ -94,6 +102,7 @@ begin_test "uninstall hooks inside repository"
     exit 1
   }
 
-  [ "git-lfs filter" = "$(git config filter.lfs.driver)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.smudge)" ]
+  [ "git-lfs filter" = "$(git config filter.lfs.clean)" ]
 )
 end_test
