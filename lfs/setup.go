@@ -108,22 +108,23 @@ func UninstallHooks() error {
 // An error will be returned if a filter is unable to be set, or if the required
 // filters were not present.
 func InstallFilters(opt InstallOptions, passThrough bool) error {
+	f := filters
+	pf := passFilters
 	// TODO - let's see if core Git accepts this :-)
 	if git.Config.IsGitVersionAtLeast("2.8.0") {
-		if passThrough {
-			return passProtocolFilters.Install(opt)
-		}
-		return filters.Install(opt)
+		f = protocolFilters
+		pf = passProtocolFilters
 	}
 	if passThrough {
-		return passFilters.Install(opt)
+		return pf.Install(opt)
 	}
-	return filters.Install(opt)
+	return f.Install(opt)
 }
 
 // UninstallFilters proxies into the Uninstall method on the Filters type to
 // remove all installed filters.
 func UninstallFilters() error {
 	filters.Uninstall()
+	protocolFilters.Uninstall()
 	return nil
 }
