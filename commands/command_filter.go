@@ -174,7 +174,7 @@ func filterCommand(cmd *cobra.Command, args []string) {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
 
-	writer.WriteString(fmt.Sprintf("version %d", FilterDriverVersion))
+	writer.WriteString(fmt.Sprintf("git-filter-protocol\nversion %d", FilterDriverVersion))
 	writer.Flush()
 
 	for {
