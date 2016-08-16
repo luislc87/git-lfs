@@ -203,7 +203,8 @@ func (a *basicDownloadAdapter) download(t *Transfer, cb TransferProgressCallback
 	}
 	written, err := tools.CopyWithCallback(dlFile, hasher, res.ContentLength, ccb)
 	if err != nil {
-		return fmt.Errorf("cannot write data to tempfile %q: %v", dlfilename, err)
+		return errutil.NewRetriableError(
+			fmt.Errorf("cannot write data to tempfile %q: %v", dlfilename, err))
 	}
 	if err := dlFile.Close(); err != nil {
 		return fmt.Errorf("can't close tempfile %q: %v", dlfilename, err)
