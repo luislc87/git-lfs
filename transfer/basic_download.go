@@ -178,11 +178,13 @@ func (a *basicDownloadAdapter) download(t *Transfer, cb TransferProgressCallback
 	}
 
 	var hasher *tools.HashingReader
+	httpReader := tools.NewRetriableReader(res.Body)
+
 	if fromByte > 0 && hash != nil {
 		// pre-load hashing reader with previous content
-		hasher = tools.NewHashingReaderPreloadHash(res.Body, hash)
+		hasher = tools.NewHashingReaderPreloadHash(httpReader, hash)
 	} else {
-		hasher = tools.NewHashingReader(res.Body)
+		hasher = tools.NewHashingReader(httpReader)
 	}
 
 	if dlFile == nil {
