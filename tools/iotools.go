@@ -6,8 +6,8 @@ import (
 	"hash"
 	"io"
 
-	"github.com/github/git-lfs/progress"
 	"github.com/github/git-lfs/errutil"
+	"github.com/github/git-lfs/progress"
 )
 
 type readSeekCloserWrapper struct {
@@ -97,9 +97,8 @@ func NewRetriableReader(r io.Reader) io.Reader {
 
 func (r *retriableReader) Read(b []byte) (int, error) {
 	n, err := r.reader.Read(b)
-	if err != nil {
-		return n, errutil.NewRetriableError(err)
+	if err == nil || err == io.EOF {
+		return n, err
 	}
-	return n, nil
+	return n, errutil.NewRetriableError(err)
 }
-
