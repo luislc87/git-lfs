@@ -203,9 +203,24 @@ func (a *basicDownloadAdapter) download(t *Transfer, cb TransferProgressCallback
 		}
 		return nil
 	}
+	tracerx.Printf("### CopyWithCallback ")
+
 	written, err := tools.CopyWithCallback(dlFile, hasher, res.ContentLength, ccb)
+
+	// err = io.ErrUnexpectedEOF
+
+	// if err == io.ErrUnexpectedEOF {
+	// 	// tracerx.Printf("### ErrUnexpectedEOF ")
+	// 	err = errutil.NewRetriableError(err)
+	// }
+
 	if err != nil {
-		return fmt.Errorf("cannot write data to tempfile %q: %v", dlfilename, err)
+		tracerx.Printf("\n\n Lars' Download Error %q\n\n", dlfilename)
+		wrappedErr := fmt.Errorf("cannot write data to tempfile %q: %v", dlfilename, err)
+		if errutil.IsRetriableError(err) {
+			return errutil.NewRetriableError(wrappedErr)
+		}
+		return wrappedErr
 	}
 	if err := dlFile.Close(); err != nil {
 		return fmt.Errorf("can't close tempfile %q: %v", dlfilename, err)
